@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Products</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.4.1/dist/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+    <style>
+       
+        #productsDiv{
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            background-color: white;
+        }
+        .productcard{
+            border:1px solid lightgray;
+            height: 510px;
+            width:290px;
+            margin:20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-direction: column;
+            transition: border-color .3s;
+            padding: 10px;
+        }
+        .productcard:hover{
+            border-color: darkblue;
+        }
+        .thumb{
+            width: 220px;
+            height: 160px;
+            cursor: pointer;
+        }
+        .detbtns{
+            background-color: navy;
+            color: white;
+            width: 90%;
+            margin-bottom:15px;
+        }
+        .detbtns:hover{
+            /* background-color: rgb(1,1,87); */
+            color:wheat;
+        }
+        .title{
+            color:darkblue;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            padding-left: 5px;
+            padding-right: 5px;
+            width: 100%;
+            text-align: center;
+        }
+        .points{
+            align-self: flex-start;
+            word-wrap: break-word;
+            height: 192px;
+        }
+        #anker{
+            text-decoration: none;
+            display: block;
+            text-align: center;
+        }
+        span{
+            background-color: black;
+            color: white;
+            border: 2px solid rgb(209, 30, 30);
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <a id="anker" href="admin.html"><span>Add Your Product</span></a>
+    <div id="productsDiv" class="container">
+       
+    </div>
+    <script type="module">
+        
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.7/firebase-app.js";
+        
+        const firebaseConfig = {
+          apiKey: "AIzaSyDoPQfGPO1hPMzkqxZAcSsHHKAMjEM_ReU",
+          authDomain: "fire9db-1a344.firebaseapp.com",
+          databaseURL: "https://fire9db-1a344-default-rtdb.firebaseio.com",
+          projectId: "fire9db-1a344",
+          storageBucket: "fire9db-1a344.appspot.com",
+          messagingSenderId: "432192363727",
+          appId: "1:432192363727:web:5ac78fba3cf3d052796bba"
+        };
+      
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        
+        import{getDatabase,ref,set,child,get} from "https://www.gstatic.com/firebasejs/9.6.7/firebase-database.js";
+        const realdb=getDatabase();
+        var OuterDiv=document.getElementById('productsDiv');
+        var ArrayOfProducts=[];
+        window.addEventListener('load',GetAllProducts);
+
+        function GetAllProducts(){
+            const dbref=ref(realdb);
+            get(child(dbref,"TheProductRealdb"))
+            .then((snapshot)=>{
+                snapshot.forEach(prod=>{
+                    ArrayOfProducts.push(prod.val());
+                });
+                AddAllProducts();
+            })
+        }
+        function AddAllProducts(){
+            let i=0;
+            ArrayOfProducts.forEach(prod=>{
+                AddAProduct(prod,i++);
+            })
+            AssignAllEvents();
+        }
+        function AddAProduct(product,index){
+            let html=
+            `
+            <img src="`+ product.LinksOfImagesArray[0] +`" class="thumb mt-2" id="thumb-`+ index + `">
+            <p class="title" id="title-`+index+`">`+getShortTitle(product.ProductTitle)+`</p>
+            `+
+            GetUl(product.Points)
+            +
+            GenerateStockLabel(product.Stock)
+            +
+            `
+            <h5 class="price">Rs.`+product.Price+`</h5>
+            <button class="detbtns btn" id="detbtn-`+index+`">View Details</button>
+            `
+
+            let newProd=document.createElement('div');
+            newProd.classList.add('productcard')
+            newProd.innerHTML=html;
+            OuterDiv.append(newProd);
+        } 
+        function getShortTitle(title){
+            if(title.length > 49) title=title.substring(0,47);
+            else return title;
+            return title+"...";
+        }
+        function GenerateStockLabel(stock){
+            let stocklabel=document.createElement('h5');
+            stocklabel.classList.add('stock');
+            if(stock>0){
+                stocklabel.innerHTML='IN STOCK';
+                stocklabel.classList.add('text-success');
+            }
+            else{
+                stocklabel.innerHTML='OUT OF STOCK';
+                stocklabel.classList.add('text-warning');
+            }
+            return stocklabel.outerHTML;
+        }
+        function GetUl(array){
+            let ul=document.createElement('ul')
+            ul.classList.add('points')
+            array.forEach(element=>{
+                let li=document.createElement('li')
+                li.innerText=element;
+                ul.append(li);
+            })
+            return ul.outerHTML;
+        }
+        function GetProductIndex(id){
+            var indstart=id.indexOf('-')+1;
+            var indend=id.length;
+            return Number(id.substring(indstart,indend));
+        }
+        function GotoProductDetails(event){
+            var index=GetProductIndex(event.target.id);
+            localStorage.Product=JSON.stringify(ArrayOfProducts[index]);
+            console.log(ArrayOfProducts[index]);
+            window.location="product-details.html";
+        }
+        function AssignAllEvents(){
+            var btns=document.getElementsByClassName('detbtns')
+            var titles=document.getElementsByClassName('title')
+            var thumbs=document.getElementsByClassName('thumb')
+            for(let i=0;i<btns.length;i++){
+                btns[i]=addEventListener('click',GotoProductDetails);
+                titles[i]=addEventListener('click',GotoProductDetails);
+                thumbs[i]=addEventListener('click',GotoProductDetails);
+            }
+        }
+    </script>
+</body>
+</html>
